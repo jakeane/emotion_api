@@ -4,3 +4,4 @@ venv
 .python-version
 *.zip
 model_data/
+.DS_Store
