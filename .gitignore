@@ -1,0 +1,6 @@
+__pycache__
+.vscode
+venv
+.python-version
+*.zip
+model_data/
