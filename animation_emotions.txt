@@ -1,0 +1,14 @@
+joy
+trust
+surprise
+happy_anticipation
+sadness
+depression
+disgust
+fear
+terror
+surprise
+sad_anticipation
+anxiety
+anger
+trust

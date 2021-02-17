@@ -6,22 +6,33 @@ from tokenization import FullTokenizer
 class ApiModel:
     def __init__(self):
         self.THRESHOLD = 0.01
-        self.LABELS_28 = ['admiration', 'amusement', 'anger', 'annoyance', 'approval', 'caring', 'confusion',
-                          'curiosity', 'desire', 'disappointment', 'disapproval', 'disgust', 'embarrassment', 'excitement',
-                          'fear', 'gratitude', 'grief', 'joy', 'love', 'nervousness', 'optimism',
-                          'pride', 'realization', 'relief', 'remorse', 'sadness', 'surprise', 'neutral']
-
-        self.LABELS_32 = ['sentimental', 'afraid', 'proud', 'faithful', 'terrified', 'joyful', 'angry', 'sad',
-                          'jealous', 'grateful', 'prepared', 'embarrassed', 'excited', 'annoyed', 'lonely', 'ashamed',
-                          'guilty', 'surprised', 'nostalgic', 'confident', 'furious', 'disappointed', 'caring', 'trusting',
-                          'disgusted', 'anticipating', 'anxious', 'hopeful', 'content', 'impressed', 'apprehensive', 'devastated']
+        
+        self.LABELS_16 = [
+            "afraid-terrified",
+            "angry-furious",
+            "sentimental-nostalgic",
+            "proud-impressed",
+            "prepared-confident",
+            "anxious-apprehensive",
+            "ashamed-embarrassed",
+            "hopeful-anticipating",
+            "faithful-trusting",
+            "lonely-sad",
+            "disappointed-devastated",
+            "annoyed-disgusted",
+            "guilty-jealous",
+            "grateful-caring",
+            "joyful-content",
+            "excited-surprised"
+        ]
+        
 
         self.MAX_SEQ_LENGTH = 50
 
         self.tokenizer = FullTokenizer(
             vocab_file='vocab.txt', do_lower_case=True)
 
-        self.model = load_model('model_data/model32')
+        self.model = load_model('model_data/model16')
 
     def predict(self, text: str):
 
@@ -35,7 +46,7 @@ class ApiModel:
             "probabilities"][0]
 
         top_probabilities = [(k, v)
-                             for k, v in zip(self.LABELS_32, probabilities)
+                             for k, v in zip(self.LABELS_16, probabilities)
                              if v >= self.THRESHOLD]
 
         return dict(sorted(top_probabilities, key=lambda x: -x[1]))
@@ -57,7 +68,7 @@ class ApiModel:
             input_mask.append(0)
             segment_ids.append(0)
 
-        return input_ids, input_mask, segment_ids, [0] * len(self.LABELS_32)
+        return input_ids, input_mask, segment_ids, [0] * len(self.LABELS_16)
 
     def _serialize_features(self, input_ids, input_mask, segment_ids, label_ids):
         features = {
