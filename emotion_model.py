@@ -2,7 +2,6 @@ from tensorflow.contrib.predictor import from_saved_model as load_model
 from tensorflow.train import Example, Features, Feature, Int64List
 from tokenization import FullTokenizer
 
-
 class ApiModel:
     def __init__(self):
         self.THRESHOLD = 0.01
@@ -25,14 +24,13 @@ class ApiModel:
             "joyful-content",
             "excited-surprised"
         ]
-        
 
         self.MAX_SEQ_LENGTH = 50
 
         self.tokenizer = FullTokenizer(
             vocab_file='vocab.txt', do_lower_case=True)
 
-        self.model = load_model('model_data/model16')
+        self.model = load_model('model_data/model32')
 
     def predict(self, text: str):
 
@@ -44,6 +42,16 @@ class ApiModel:
 
         probabilities = self.model({'examples': [features]})[
             "probabilities"][0]
+
+        # Convert probabilities to one hot vector (probabilities.apply(lambda x: 1 if x >= 0.8 else 0))
+        # Matrix multiply probabilites to map api_emotions.txt to animation_emotions.txt
+        # Use Tensorflow matrix multiplication
+        """
+            return {
+                "emotion": Whatever is 1 in probabilites.apply() vector. "neutral" otherwise
+                "animations": vector from matrix multiplication
+            }
+        """
 
         top_probabilities = [(k, v)
                              for k, v in zip(self.LABELS_16, probabilities)
