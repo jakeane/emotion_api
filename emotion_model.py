@@ -54,7 +54,7 @@ class ApiModel:
         """
         prob_threshold = 0.8
         # value for "emotion" in return dict
-        with open('/Users/zhangguhui/emotion_api/api_emotions.txt', 'r') as f:
+        with open('api_emotions.txt', 'r') as f:
             api_emotions = [line.strip() for line in f.readlines()]
             
         excluded_emotions = ['nostalgic', 'sentimental', 'prepared', 'anticipating']
