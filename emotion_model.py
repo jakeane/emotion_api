@@ -42,7 +42,7 @@ class ApiModel:
 
         probabilities = self.model({'examples': [features]})[
             "probabilities"][0]
-
+        
         # Convert probabilities to one hot vector (probabilities.apply(lambda x: 1 if x >= 0.8 else 0))
         # Matrix multiply probabilites to map api_emotions.txt to animation_emotions.txt
         # Use Tensorflow matrix multiplication
@@ -52,6 +52,26 @@ class ApiModel:
                 "animations": vector from matrix multiplication
             }
         """
+        prob_threshold = 0.8
+        # value for "emotion" in return dict
+        with open('/Users/zhangguhui/emotion_api/api_emotions.txt', 'r') as f:
+            api_emotions = [line.strip() for line in f.readlines()]
+            
+        excluded_emotions = ['nostalgic', 'sentimental', 'prepared', 'anticipating']
+        emotions = [k for k,v in zip(api_emotions, probabilities) if (v>th) and (k not in excluded_emotions)] # recheck
+        if len(emotions) == 0:
+            emotions = ['neutral']
+        
+        # value for "animations" in return dict
+        multiplier = np.genfromtxt('emotion_multiplier.csv')
+        multiplier = tf.constant(multiplier, dtype='float32')
+        temp = tf.constant(probabilities)
+        temp = tf.map_fn(lambda x: tf.cond(tf.greater(x, prob_threshold), lambda: 1.0, lambda: 0.0), temp)
+        temp = tf.matmul(multiplier, tf.reshape(temp, (-1, 1)))
+        with tf.Session() as sess: 
+            animations = tf.transpose(t3).eval()
+        
+        returning_dict = {'emotions': emotions, 'animations': animations}
 
         top_probabilities = [(k, v)
                              for k, v in zip(self.LABELS_16, probabilities)
