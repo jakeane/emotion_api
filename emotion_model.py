@@ -1,29 +1,46 @@
 from tensorflow.contrib.predictor import from_saved_model as load_model
 from tensorflow.train import Example, Features, Feature, Int64List
 from tokenization import FullTokenizer
-import tensorflow as tf
+import numpy as np
 
 class ApiModel:
     def __init__(self):
-        self.THRESHOLD = 0.01
+        self.THRESHOLD = 0.1
+        self.PROB_THRESHOLD = 0.8
         
-        self.LABELS_16 = [
-            "afraid-terrified",
-            "angry-furious",
-            "sentimental-nostalgic",
-            "proud-impressed",
-            "prepared-confident",
-            "anxious-apprehensive",
-            "ashamed-embarrassed",
-            "hopeful-anticipating",
-            "faithful-trusting",
-            "lonely-sad",
-            "disappointed-devastated",
-            "annoyed-disgusted",
-            "guilty-jealous",
-            "grateful-caring",
-            "joyful-content",
-            "excited-surprised"
+        self.LABELS_32 = [
+            "sentimental",
+            "afraid",
+            "proud",
+            "faithful",
+            "terrified",
+            "joyful",
+            "angry",
+            "sad",
+            "jealous",
+            "grateful",
+            "prepared",
+            "embarrassed",
+            "excited",
+            "annoyed",
+            "lonely",
+            "ashamed",
+            "guilty",
+            "surprised",
+            "nostalgic",
+            "confident",
+            "furious",
+            "disappointed",
+            "caring",
+            "trusting",
+            "disgusted",
+            "anticipating",
+            "anxious",
+            "hopeful",
+            "content",
+            "impressed",
+            "apprehensive",
+            "devastated"
         ]
 
         self.MAX_SEQ_LENGTH = 50
@@ -32,6 +49,10 @@ class ApiModel:
             vocab_file='vocab.txt', do_lower_case=True)
 
         self.model = load_model('model_data/model32')
+
+        self.matrix = np.genfromtxt('emotion_multiplier.csv')
+
+        self.map_probabilities = np.vectorize(lambda x: 1 if x >= self.PROB_THRESHOLD else 0)
 
     def predict(self, text: str):
 
@@ -44,41 +65,20 @@ class ApiModel:
         probabilities = self.model({'examples': [features]})[
             "probabilities"][0]
         
-        # Convert probabilities to one hot vector (probabilities.apply(lambda x: 1 if x >= 0.8 else 0))
-        # Matrix multiply probabilites to map api_emotions.txt to animation_emotions.txt
-        # Use Tensorflow matrix multiplication
-        """
-            return {
-                "emotion": Whatever is 1 in probabilites.apply() vector. "neutral" otherwise
-                "animations": vector from matrix multiplication
-            }
-        """
-        prob_threshold = 0.8
-        # value for "emotion" in return dict
-        with open('api_emotions.txt', 'r') as f:
-            api_emotions = [line.strip() for line in f.readlines()]
-            
-        excluded_emotions = ['nostalgic', 'sentimental', 'prepared', 'anticipating']
-        emotions = [k for k,v in zip(api_emotions, probabilities) if (v>th) and (k not in excluded_emotions)] # recheck
-        if len(emotions) == 0:
-            emotions = ['neutral']
-        
-        # value for "animations" in return dict
-        multiplier = np.genfromtxt('emotion_multiplier.csv')
-        multiplier = tf.constant(multiplier, dtype='float32')
-        temp = tf.constant(probabilities)
-        temp = tf.map_fn(lambda x: tf.cond(tf.greater(x, prob_threshold), lambda: 1.0, lambda: 0.0), temp)
-        temp = tf.matmul(multiplier, tf.reshape(temp, (-1, 1)))
-        with tf.Session() as sess: 
-            animations = tf.transpose(t3).eval()
-        
-        returning_dict = {'emotions': emotions, 'animations': animations}
+        # excluded_emotions = ['nostalgic', 'sentimental', 'prepared', 'anticipating']
+        # emotions = [k for k,v in zip(self.LABELS_32, probabilities) if (v>self.PROB_THRESHOLD) and (k not in excluded_emotions)] # recheck
+        # if len(emotions) == 0:
+        #     emotions = ['neutral']
+
+        animations = list(np.matmul(self.matrix, self.map_probabilities(probabilities)))
 
         top_probabilities = [(k, v)
-                             for k, v in zip(self.LABELS_16, probabilities)
+                             for k, v in zip(self.LABELS_32, probabilities)
                              if v >= self.THRESHOLD]
+        top_emotions = dict(sorted(top_probabilities, key=lambda x: -x[1]))
 
-        return dict(sorted(top_probabilities, key=lambda x: -x[1]))
+        return {'emotions': top_emotions, 'animations': animations}
+
 
     def _convert_single_example(self, text):
         """Modified from goemotions/bert_classifier.py"""
@@ -97,7 +97,7 @@ class ApiModel:
             input_mask.append(0)
             segment_ids.append(0)
 
-        return input_ids, input_mask, segment_ids, [0] * len(self.LABELS_16)
+        return input_ids, input_mask, segment_ids, [0] * len(self.LABELS_32)
 
     def _serialize_features(self, input_ids, input_mask, segment_ids, label_ids):
         features = {
