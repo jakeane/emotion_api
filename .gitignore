@@ -5,3 +5,4 @@ venv
 *.zip
 model_data/
 .DS_Store
+old_models/
