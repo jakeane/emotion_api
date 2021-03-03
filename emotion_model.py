@@ -1,6 +1,7 @@
 from tensorflow.contrib.predictor import from_saved_model as load_model
 from tensorflow.train import Example, Features, Feature, Int64List
 from tokenization import FullTokenizer
+import tensorflow as tf
 
 class ApiModel:
     def __init__(self):
