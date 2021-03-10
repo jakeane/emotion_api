@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
-from typing import Dict
+from typing import List, Dict
 
 from emotion_model import ApiModel, get_model
 
@@ -12,7 +12,8 @@ class SentimentRequest(BaseModel):
 
 
 class SentimentResponse(BaseModel):
-    probabilities: Dict[str, float]
+    emotion: Dict[str, float]
+    animations: List[float]
 
 @app.get("/")
 def root_message():
@@ -20,7 +21,8 @@ def root_message():
 
 @app.post("/predict", response_model=SentimentResponse)
 def predict(request: SentimentRequest, model: ApiModel = Depends(get_model)):
-    sorted_probabilities = model.predict(request.text)
+    res = model.predict(request.text)
     return SentimentResponse(
-        probabilities=sorted_probabilities
+        emotion=res['emotions'],
+        animations=res['animations']
     )

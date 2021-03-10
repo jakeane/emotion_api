@@ -5,3 +5,4 @@ venv
 .python-version
 *.zip
 README.md
+old_models/
