@@ -75,6 +75,7 @@ class ApiModel:
         top_probabilities = [(k, v)
                              for k, v in zip(self.LABELS_32, probabilities)
                              if v >= self.THRESHOLD]
+        
         top_emotions = dict(sorted(top_probabilities, key=lambda x: -x[1]))
 
         return {'emotions': top_emotions, 'animations': animations}
